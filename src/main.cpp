@@ -195,7 +195,7 @@ void TDS_PH_Temperature(void *pvParameters)
       // GET TDS
       gravityTds.setTemperature(Temp);
       gravityTds.update();
-      TDSvalue = gravityTds.getTdsValue();
+      TDSvalue = gravityTds.getTdsValue() * 1.8;
 
       // GET pH
       float PH_Voltage = 0;
@@ -249,9 +249,13 @@ void NTU_Database(void *pvParameters)
     }
 
     NTUvalue = round(NTUvalue);
+    Serial.println(NTUvalue);
+    Serial.println(PHvalue);
+    Serial.println(TDSvalue);
+    Serial.println(Temp);
     delay(500);
 
-    if (Firebase.ready() && PHvalue && TDSvalue && Temp && NTUvalue)
+    if (Firebase.ready())
     {
       // JSON DATA SET
       json.set("DateTime", DateTime);
@@ -266,6 +270,8 @@ void NTU_Database(void *pvParameters)
       Serial.println("Data sent to database...");
       Serial.print("Status code: ");
       Serial.println(fbdo.httpCode());
+      digitalWrite(databaseLED, HIGH);
+      digitalWrite(errDatabaseLED, LOW);
 
       while (fbdo.errorCode() != 200)
       {
@@ -283,6 +289,13 @@ void NTU_Database(void *pvParameters)
       digitalWrite(errDatabaseLED, LOW);
       vTaskResume(TDSPHTemperature);
       // SEND DATA TO FIREBASE END
+    }
+    else
+    {
+      digitalWrite(errDatabaseLED, HIGH);
+      digitalWrite(databaseLED, LOW);
+      Serial.println("Please put sensor probe to water.");
+      delay(500);
     }
 
     delay(1000);
